@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Knowledge Graph — Golden Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --surface: #161a20;
+      --border: #2a3038;
+      --text: #e6e9ef;
+      --text-muted: #8b9298;
+      --accent: #6ee7b7;
+      --accent-dim: #34d399;
+      --error: #f87171;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(110, 231, 183, 0.06), transparent), radial-gradient(ellipse 60% 40% at 100% 50%, rgba(42, 48, 56, 0.4), transparent);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--surface) 0%, rgba(26, 31, 38, 0.95) 100%);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand > div { display: flex; flex-direction: column; gap: 0.1rem; }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1.1em;
+      background: linear-gradient(180deg, var(--accent), var(--accent-dim));
+      border-radius: 2px;
+      margin-right: 0.6rem;
+      vertical-align: -0.2em;
+    }
+    .tagline {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+    .brand-logo {
+      height: 36px;
+      width: auto;
+      display: block;
+      flex-shrink: 0;
+    }
+    .brand-text-fallback {
+      display: none;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .brand-text-fallback.show { display: inline; }
+    .hero-wrap {
+      margin: -0.5rem 0 1.5rem;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      max-height: 140px;
+      background: var(--surface);
+    }
+    .hero-wrap img {
+      width: 100%;
+      height: auto;
+      max-height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-dot.connected { background: var(--accent); }
+    .status-dot.error { background: var(--error); }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    }
+    .panel-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .query-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .query-wrap {
+      flex: 1;
+      min-width: 280px;
+    }
+    textarea.query-input {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.9rem 1rem;
+      background: #0d0f12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea.query-input:focus {
+      border-color: var(--accent);
+    }
+    .examples-wrap {
+      min-width: 220px;
+    }
+    select.examples {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    select.examples option {
+      background: var(--surface);
+      color: var(--text);
+    }
+    button.run {
+      padding: 0.6rem 1.25rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.05s;
+    }
+    button.run:hover { background: var(--accent-dim); }
+    button.run:active { transform: scale(0.98); }
+    button.run:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .results-section { margin-top: 1rem; }
+    .results-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .results-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    table.results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    table.results-table th,
+    table.results-table td {
+      padding: 0.6rem 0.9rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    table.results-table th {
+      background: var(--bg);
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    table.results-table tr:last-child td { border-bottom: none; }
+    table.results-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .cell-array { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+    .error-msg {
+      padding: 0.75rem 1rem;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: var(--radius);
+      color: var(--error);
+      font-size: 0.9rem;
+    }
+    #graph-container {
+      width: 100%;
+      height: 400px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .tabs button {
+      padding: 0.4rem 0.8rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tabs button.active {
+      background: var(--border);
+      color: var(--text);
+    }
+    .tabs button:hover:not(.active) { color: var(--text); }
+    .ask-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .ask-wrap { flex: 1; min-width: 280px; }
+    .ask-input {
+      width: 100%;
+      min-height: 52px;
+      padding: 0.6rem 1rem;
+      background: #0d0f12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .ask-input:focus { border-color: var(--accent); }
+    button.ask {
+      padding: 0.6rem 1.25rem;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.05s;
+    }
+    button.ask:hover { background: var(--accent-dim); }
+    button.ask:active { transform: scale(0.98); }
+    button.ask:disabled { opacity: 0.6; cursor: not-allowed; }
+    .summary-block {
+      padding: 0.75rem 1rem;
+      background: rgba(110,231,183,0.08);
+      border: 1px solid rgba(110,231,183,0.25);
+      border-radius: var(--radius);
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .generated-cypher-wrap {
+      margin-bottom: 0.75rem;
+    }
+    .generated-cypher-wrap .panel-title { margin-bottom: 0.35rem; }
+    .generated-cypher {
+      width: 100%;
+      min-height: 60px;
+      padding: 0.6rem 1rem;
+      background: #0d0f12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      overflow: auto;
+      resize: vertical;
+    }
+    .ollama-notice {
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.75rem;
+      background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.35);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .ollama-notice a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <div class="brand">
+        <img src="/images/platform-logo.svg" alt="Platform" class="brand-logo" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.add('show');" /><span class="brand-text-fallback">Platform</span>
+        <div>
+          <h1>Knowledge Graph</h1>
+          <span class="tagline">Golden Data</span>
+        </div>
+      </div>
+      <div class="status" id="status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Checking…</span>
+      </div>
+    </header>
+
+    <div class="hero-wrap" aria-hidden="true">
+      <img src="/images/construction-hero.svg" alt="" />
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Ask in natural language</div>
+      <div id="ollama-notice" class="ollama-notice" style="display: none;"></div>
+      <div class="ask-row">
+        <div class="ask-wrap">
+          <textarea class="ask-input" id="ask-input" placeholder="e.g. Which companies have 2+ projects?"></textarea>
+        </div>
+        <button type="button" class="ask" id="ask-btn">Ask</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Cypher query</div>
+      <div class="query-row">
+        <div class="query-wrap">
+          <textarea class="query-input" id="cypher" placeholder="MATCH (c:Company)-[:PARTICIPATES_IN]->(p:Project) RETURN c.name, p.name LIMIT 10"></textarea>
+        </div>
+        <div class="examples-wrap">
+          <select class="examples" id="examples" aria-label="Example questions">
+            <option value="">— Example questions —</option>
+          </select>
+        </div>
+        <button type="button" class="run" id="run">Run</button>
+      </div>
+    </div>
+
+    <div class="panel results-section" id="results-panel" style="display: none;">
+      <div class="panel-title">Results</div>
+      <div id="ask-summary-block" class="summary-block" style="display: none;"></div>
+      <div id="ask-cypher-block" class="generated-cypher-wrap" style="display: none;">
+        <div class="panel-title">Generated Cypher</div>
+        <pre class="generated-cypher" id="generated-cypher" readonly></pre>
+      </div>
+      <div class="results-meta" id="results-meta"></div>
+      <div class="tabs" id="tabs" style="display: none;">
+        <button type="button" class="active" data-tab="table">Table</button>
+        <button type="button" data-tab="graph">Graph</button>
+      </div>
+      <div id="tab-table">
+        <div class="results-table-wrap">
+          <table class="results-table" id="results-table">
+            <thead id="results-thead"></thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="tab-graph" style="display: none;">
+        <div id="graph-container"></div>
+      </div>
+      <div id="results-error" class="error-msg" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const cypherEl = document.getElementById('cypher');
+    const examplesEl = document.getElementById('examples');
+    const runBtn = document.getElementById('run');
+    const askInput = document.getElementById('ask-input');
+    const askBtn = document.getElementById('ask-btn');
+    const askSummaryBlock = document.getElementById('ask-summary-block');
+    const askCypherBlock = document.getElementById('ask-cypher-block');
+    const generatedCypherEl = document.getElementById('generated-cypher');
+    const statusEl = document.getElementById('status');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const resultsPanel = document.getElementById('results-panel');
+    const resultsMeta = document.getElementById('results-meta');
+    const resultsThead = document.getElementById('results-thead');
+    const resultsTbody = document.getElementById('results-tbody');
+    const resultsError = document.getElementById('results-error');
+    const tabsEl = document.getElementById('tabs');
+    const tabTable = document.getElementById('tab-table');
+    const tabGraph = document.getElementById('tab-graph');
+    const graphContainer = document.getElementById('graph-container');
+
+    let network = null;
+    let lastGraphData = null;
+
+    async function checkStatus() {
+      try {
+        const r = await fetch('/api/status');
+        const d = await r.json();
+        statusDot.className = 'status-dot ' + (d.ok ? 'connected' : 'error');
+        statusText.textContent = d.ok ? 'Neo4j connected' : (d.error || 'Not connected');
+        let tip = d.detail || '';
+        if (d.connection) {
+          const c = d.connection;
+          tip = (tip ? tip + '\n\n' : '') + 'App is using: URI=' + (c.uri || '') + ', username=' + (c.username || '') + ', database=' + (c.database || '');
+        }
+        statusEl.title = tip;
+      } catch (e) {
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'Server error';
+        statusEl.title = '';
+      }
+    }
+
+    async function loadExamples() {
+      try {
+        const r = await fetch('/api/examples');
+        const list = await r.json();
+        examplesEl.innerHTML = '<option value="">— Example questions —</option>' +
+          list.map(({ id, label }) => `<option value="${id}">${label}</option>`).join('');
+        examplesEl.addEventListener('change', () => {
+          const item = list.find(x => x.id === examplesEl.value);
+          if (item) cypherEl.value = item.cypher;
+        });
+      } catch (_) {}
+    }
+
+    function showResults(data) {
+      resultsPanel.style.display = 'block';
+      resultsError.style.display = 'none';
+      tabTable.style.display = 'block';
+      tabGraph.style.display = 'none';
+      if (network) {
+        network.destroy();
+        network = null;
+      }
+
+      if (data.summary) {
+        askSummaryBlock.textContent = data.summary;
+        askSummaryBlock.style.display = 'block';
+      } else {
+        askSummaryBlock.style.display = 'none';
+      }
+      if (data.cypher) {
+        generatedCypherEl.textContent = data.cypher;
+        askCypherBlock.style.display = 'block';
+        cypherEl.value = data.cypher;
+      } else {
+        askCypherBlock.style.display = 'none';
+      }
+
+      if (data.error) {
+        resultsError.textContent = data.error;
+        if (data.cypher) {
+          askCypherBlock.style.display = 'block';
+          generatedCypherEl.textContent = data.cypher;
+          cypherEl.value = data.cypher;
+        }
+        resultsError.style.display = 'block';
+        resultsMeta.textContent = '';
+        resultsThead.innerHTML = '';
+        resultsTbody.innerHTML = '';
+        tabsEl.style.display = 'none';
+        return;
+      }
+
+      const { columns = [], rows = [], graph } = data;
+      resultsMeta.textContent = `${rows.length} row(s)`;
+      resultsThead.innerHTML = '<tr>' + columns.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr>';
+      resultsTbody.innerHTML = rows.map(row =>
+        '<tr>' + columns.map(col => {
+          const v = row[col];
+          const isArray = Array.isArray(v);
+          const text = isArray ? v.join(', ') : (v == null ? '' : String(v));
+          return `<td class="${isArray ? 'cell-array' : ''}">${escapeHtml(text)}</td>`;
+        }).join('') + '</tr>'
+      ).join('');
+
+      if (graph && (graph.nodes?.length || graph.edges?.length)) {
+        lastGraphData = graph;
+        tabsEl.style.display = 'flex';
+        document.querySelectorAll('.tabs button').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === 'table');
+        });
+      } else {
+        lastGraphData = null;
+        tabsEl.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function drawGraph() {
+      if (!lastGraphData || !window.vis) return;
+      const nodes = new vis.DataSet(
+        lastGraphData.nodes.map(n => ({
+          id: n.id,
+          label: (n.title || n.props?.name || n.props?.full_name || n.id).slice(0, 30),
+          group: (n.label || 'Node').toLowerCase(),
+          title: n.title || n.id
+        }))
+      );
+      const edges = new vis.DataSet(
+        lastGraphData.edges.map(e => ({
+          id: e.id,
+          from: e.from,
+          to: e.to,
+          label: e.label || ''
+        }))
+      );
+      const container = graphContainer;
+      const data = { nodes, edges };
+      const options = {
+        nodes: {
+          font: { size: 12, color: '#e6e9ef' },
+          borderWidth: 1,
+          color: { background: '#161a20', border: '#6ee7b7' }
+        },
+        edges: { color: '#8b9298', arrows: 'to' },
+        groups: {
+          company: { color: { background: '#34d399', border: '#6ee7b7' } },
+          project: { color: { background: '#60a5fa', border: '#93c5fd' } },
+          contact: { color: { background: '#c084fc', border: '#d8b4fe' } },
+          node: { color: { background: '#161a20', border: '#2a3038' } }
+        }
+      };
+      if (network) network.destroy();
+      network = new vis.Network(container, data, options);
+    }
+
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        tabTable.style.display = tab === 'table' ? 'block' : 'none';
+        tabGraph.style.display = tab === 'graph' ? 'block' : 'none';
+        if (tab === 'graph') drawGraph();
+      });
+    });
+
+    async function runQuery() {
+      const cypher = cypherEl.value.trim();
+      if (!cypher) return;
+      runBtn.disabled = true;
+      try {
+        const r = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cypher })
+        });
+        const data = await r.json();
+        showResults(data);
+        if (data.graph && (data.graph.nodes?.length || data.graph.edges?.length)) setTimeout(drawGraph, 50);
+      } catch (e) {
+        showResults({ error: e.message });
+      }
+      runBtn.disabled = false;
+    }
+
+    async function runAsk() {
+      const question = askInput.value.trim();
+      if (!question) return;
+      askBtn.disabled = true;
+      askBtn.textContent = 'Asking…';
+      try {
+        const r = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await r.json();
+        showResults(data);
+        if (data.graph && (data.graph.nodes?.length || data.graph.edges?.length)) setTimeout(drawGraph, 50);
+      } catch (e) {
+        showResults({ error: e.message });
+      }
+      askBtn.disabled = false;
+      askBtn.textContent = 'Ask';
+    }
+
+    askBtn.addEventListener('click', runAsk);
+    runBtn.addEventListener('click', runQuery);
+    cypherEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runQuery();
+    });
+
+    const ollamaNoticeEl = document.getElementById('ollama-notice');
+
+    async function checkOllamaStatus() {
+      try {
+        const r = await fetch('/api/ollama-status');
+        const d = await r.json();
+        if (!d.ok && d.error) {
+          ollamaNoticeEl.innerHTML = 'Ask requires Ollama. ' + escapeHtml(d.error) + ' You can still run Cypher queries below.';
+          ollamaNoticeEl.style.display = 'block';
+        } else {
+          ollamaNoticeEl.style.display = 'none';
+        }
+      } catch (_) {
+        ollamaNoticeEl.style.display = 'none';
+      }
+    }
+
+    checkStatus();
+    loadExamples();
+    checkOllamaStatus();
+  </script>
+</body>
+</html>

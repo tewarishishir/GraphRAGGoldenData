@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" width="120" height="36" aria-label="Platform">
+  <!-- Placeholder: replace with official logo if needed -->
+  <rect width="32" height="32" rx="4" fill="#E87500"/>
+  <text x="16" y="22" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">P</text>
+  <text x="42" y="22" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#e6e9ef" letter-spacing="0.02em">Platform</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 140" width="1200" height="140" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#161a20"/>
+      <stop offset="50%" style="stop-color:#1a1f26"/>
+      <stop offset="100%" style="stop-color:#161a20"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6ee7b7;stop-opacity:0.1"/>
+      <stop offset="60%" style="stop-color:#34d399;stop-opacity:0.04"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6ee7b7;stop-opacity:0"/>
+      <stop offset="20%" style="stop-color:#6ee7b7;stop-opacity:0.4"/>
+      <stop offset="50%" style="stop-color:#34d399;stop-opacity:0.5"/>
+      <stop offset="80%" style="stop-color:#6ee7b7;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#6ee7b7;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="140" fill="url(#bg)"/>
+  <rect width="1200" height="140" fill="url(#glow)"/>
+  <!-- Soft wave accent (data / flow feel) -->
+  <path d="M0,80 Q300,40 600,80 T1200,80" fill="none" stroke="url(#lineGrad)" stroke-width="2" opacity="0.8"/>
+</svg>
