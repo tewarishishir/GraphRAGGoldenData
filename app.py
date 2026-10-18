@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Flask app to query the Neo4j Knowledge Graph from a web UI.
 Run: flask --app app run

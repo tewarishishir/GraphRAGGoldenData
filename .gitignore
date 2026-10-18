@@ -3,6 +3,10 @@
 .env.local
 *.env
 
+# Private / real data (never commit)
+data_private/
+*.private.csv
+
 # Python
 .venv/
 venv/

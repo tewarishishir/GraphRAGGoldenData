@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Create golden data records for companies, projects, and contacts per cluster.
 

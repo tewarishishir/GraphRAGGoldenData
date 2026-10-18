@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """
 Run the full pipeline: golden records -> Neo4j Knowledge Graph.
 
