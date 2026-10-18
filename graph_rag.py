@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 LLM + Graph RAG: natural-language question → Cypher (via Ollama) → Neo4j → table + summary.
 """

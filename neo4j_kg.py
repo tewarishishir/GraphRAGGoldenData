@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Load golden companies, projects, and contacts into Neo4j as a Knowledge Graph.
 

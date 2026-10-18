@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """
 Test Neo4j connection and print the exact error if it fails.
 Run from project root: python test_neo4j_connection.py

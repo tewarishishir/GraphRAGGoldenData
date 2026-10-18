@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Paths and Neo4j connection settings."""
 import os
 from pathlib import Path
